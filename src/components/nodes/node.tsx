@@ -1,0 +1,202 @@
+import React, { HTMLAttributes, ReactNode, useEffect, useRef, useState } from 'react'
+import { Handle, Position, NodeProps, HandleProps, HandleType } from 'reactflow'
+import { Trash2, ChevronUp, ChevronDown, MenuIcon, EllipsisVertical, DeleteIcon, LucideDelete, Trash, Edit, Notebook, Eraser } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { Select, SelectLabel, SelectValue, SelectContent, SelectGroup, SelectItem, SelectTrigger } from '../ui/select'
+import { Button } from '../ui/button'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuPortal, DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from '../ui/dropdown-menu'
+import { Separator } from '../ui/separator'
+import { Input } from '../ui/input'
+import { Textarea } from '../ui/textarea'
+
+interface NodeComponentProps extends NodeProps {
+  body?: React.JSX.Element,
+  handles: Array<{
+    type: HandleType,
+    position: Position,
+  }>,
+  className?: string,
+  options?: Array<React.JSX.Element>,
+  onClick?: () => void,
+  updateData: (data: Record<string, any>) => any,
+  selectedNodeId?: string
+}
+
+const NodeComponent = ({ data, id, body, handles, className, options, onClick, updateData, selectedNodeId, selected }: NodeComponentProps) => {
+  const [collapsed, setCollapsed] = useState(false)
+  const toolbarRef = useRef<HTMLDivElement>(null);
+  const [renaming, setRenaming] = useState(false);
+  const [label, setLabel] = useState(data.label ?? '')
+  const [noteStr, setNoteStr] = useState<string | undefined>(data.note);
+  const [editNote, setEditNote] = useState(false);
+
+  useEffect(() => {
+    if (renaming) return;
+    if (data.label && label !== data.note) updateData({
+      label: label
+    }) 
+  }, [renaming]);
+
+  useEffect(() => {
+    if (editNote) return;
+    if (noteStr && noteStr !== data.note) updateData({
+      note: noteStr
+    }) 
+  }, [editNote]);
+
+  const deleteNode = () => {
+    const customEvent = new CustomEvent('delete-node', {
+      detail: {
+        id
+      },
+    })
+    window.dispatchEvent(customEvent);
+  }
+
+  const handleAddNote = () => {
+    setEditNote(true);
+  }
+
+  const handleDeleteNote = () => {
+    setEditNote(false);
+    setNoteStr(undefined);
+  }
+
+  const componentUi = <div className={`flex flex-col gap-2 ${className} max-w-sm`} onClick={() => {
+    onClick?.();
+  }}>
+      {
+        noteStr || editNote ?
+        <div className='absolute bottom-[102%] w-full'>
+          <div className='relative w-full'>
+            {/*TODO toolbar*/}
+            <Textarea 
+              autoFocus
+              value={noteStr || ''} 
+              onChange={(event) => setNoteStr(event.target.value)} 
+              className=' border-amber-100 outline-none shadow-none bg-yellow-50 resize-none'
+              onBlur={() => {
+                setEditNote(false);
+              }}
+              spellCheck={false}
+            />
+          </div>
+        </div>
+        : <></>
+      }
+      <div
+        className={cn(
+          'rounded-md border shadow-md relative transition-all overflow-visible bg-card',
+          `${data?.runState?.runStartedAt && data?.runState?.status === "success" ? 'border-2 border-success' : ''}`,
+          `${data?.runState?.runStartedAt && data?.runState?.status === "error" ? 'border-2 border-destructive' : ''}`,
+          `${selected ? 'border-primary' : ''}`,
+        )}
+      >
+        {/* Left and Right handles */}
+        {handles.map((h, idx) => {
+          return (
+            <Handle
+              key={idx}
+              type={h.type}
+              position={h.position}
+              style={{ zIndex: 1, backgroundColor: '#007BFF', width: 10, height: 10 }} />
+          );
+        })}
+
+        {/* Toolbar */}
+        <div
+          ref={toolbarRef}
+          className={cn(
+            ' w-full border-b bg-muted flex items-center justify-between px-2 py-1',
+            'rounded-md',
+            !collapsed ? 'rounded-b-none' : '',
+          )}
+        >
+          {/* Collapse Button */}
+          <div className='flex flex-row gap-x-2 items-center'>
+            <button onClick={() => setCollapsed(prev => !prev)} className="text-muted-foreground cursor-pointer">
+              {collapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
+            </button>
+
+            {renaming ? (
+              <input
+                className="text-xs font-medium text-muted-foreground truncate border rounded-sm px-1 py-0.5 bg-background"
+                value={label}
+                onChange={(e) => setLabel(e.target.value)}
+                onBlur={() => setRenaming(false)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    setRenaming(false);
+                    // Optionally emit a custom event here to notify parent
+                  }
+                }}
+                autoFocus
+              />
+            ) : (
+              <div
+                className="text-xs font-medium text-muted-foreground truncate"
+              >
+                {label}
+              </div>
+            )}
+
+
+          </div>
+
+          {
+            <div className='z-50'>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <EllipsisVertical className='text-muted-foreground cursor-pointer h-3' />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56">
+                  <DropdownMenuLabel>Options</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuGroup>
+                    <DropdownMenuItem onSelect={() => setRenaming(true)}>
+                      <Edit />
+                      Rename
+                    </DropdownMenuItem>
+                    {!(noteStr || editNote)? 
+                    <DropdownMenuItem onClick={handleAddNote}>
+                      <Notebook />
+                      Add note
+                    </DropdownMenuItem> : 
+                    <DropdownMenuItem onClick={handleDeleteNote}>
+                      <Eraser />
+                      Delete note
+                    </DropdownMenuItem>
+                    }
+                    {
+                      options
+                    }
+                  </DropdownMenuGroup>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem className='text-destructive' onSelect={deleteNode}>
+                    <Trash className='text-destructive' />
+                    Delete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          }
+        </div>
+
+        {/* Content in Expanded Mode */}
+        {!collapsed && (
+          <div className={`p-2 flex flex-col items-start`}>
+            <div className="text-xs font-medium text-gray-400 text-center">{data.nodeName}</div>
+            <p className='text-xs text-muted-foreground'>
+              {data.description}
+            </p>
+            {body ? <Separator className='mb-2 mt-2'/> : <></>}
+            {body || <></>}
+          </div>
+        )}
+      </div>
+    </div>
+  return componentUi;
+}
+
+export default NodeComponent;
