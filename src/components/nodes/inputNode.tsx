@@ -1,12 +1,9 @@
 "use client";
 
-import { NodeProps, Position } from "reactflow";
+import { Position } from "reactflow";
 import NodeComponent from "./node";
 import { Textarea } from "../ui/textarea";
-import { useEffect, useState } from "react";
-import nodeService from "@/services/node";
 import { ExtendedNodeProps } from "@/types/node";
-import { useDebounce } from "@/hooks/useDebounce";
 
 const StartNode = (props: ExtendedNodeProps) => {
     const { id, data, updateSelf } = props;

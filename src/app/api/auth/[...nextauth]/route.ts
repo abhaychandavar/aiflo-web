@@ -3,7 +3,7 @@ import NextAuth, { AuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import axios from "axios";
 
-export const authOptions: AuthOptions = {
+const authOptions: AuthOptions = {
     providers: [
       GoogleProvider({
         clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -16,7 +16,7 @@ export const authOptions: AuthOptions = {
     },
   
     callbacks: {
-      async signIn({ user, account, profile }) {
+      async signIn({ account, profile }) {
         try {
             if (!account) return false;
             const response = await axios.post(`${settings.services.auth.baseURL}/api/v1/auth/internal`, {

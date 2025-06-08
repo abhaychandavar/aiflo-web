@@ -5,7 +5,6 @@ import {
   CircleX,
   Edit,
   EllipsisVertical,
-  Grid,
   Trash,
 } from "lucide-react"
 import {
@@ -37,7 +36,6 @@ import {
   DialogContent,
   DialogFooter,
   DialogTitle,
-  DialogTrigger,
 } from "./ui/dialog"
 import { Input } from "./ui/input"
 import { Label } from "./ui/label"
@@ -95,6 +93,7 @@ const FloCard = ({
       setIsEditModalOpen(false)
       toast.success("Changes saved")
     } catch (err) {
+      console.debug(err)
       toast.error("Could not save changes")
     }
   }

@@ -1,13 +1,9 @@
-import React, { HTMLAttributes, ReactNode, useEffect, useRef, useState } from 'react'
-import { Handle, Position, NodeProps, HandleProps, HandleType } from 'reactflow'
-import { Trash2, ChevronUp, ChevronDown, MenuIcon, EllipsisVertical, DeleteIcon, LucideDelete, Trash, Edit, Notebook, Eraser } from 'lucide-react'
+import React, { useEffect, useRef, useState } from 'react'
+import { Handle, Position, NodeProps, HandleType } from 'reactflow'
+import { ChevronUp, ChevronDown, EllipsisVertical, Trash, Edit, Notebook, Eraser } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
-import { Select, SelectLabel, SelectValue, SelectContent, SelectGroup, SelectItem, SelectTrigger } from '../ui/select'
-import { Button } from '../ui/button'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuPortal, DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from '../ui/dropdown-menu'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu'
 import { Separator } from '../ui/separator'
-import { Input } from '../ui/input'
 import { Textarea } from '../ui/textarea'
 
 interface NodeComponentProps extends NodeProps {
@@ -23,7 +19,7 @@ interface NodeComponentProps extends NodeProps {
   selectedNodeId?: string
 }
 
-const NodeComponent = ({ data, id, body, handles, className, options, onClick, updateData, selectedNodeId, selected }: NodeComponentProps) => {
+const NodeComponent = ({ data, id, body, handles, className, options, onClick, updateData, selected }: NodeComponentProps) => {
   const [collapsed, setCollapsed] = useState(false)
   const toolbarRef = useRef<HTMLDivElement>(null);
   const [renaming, setRenaming] = useState(false);

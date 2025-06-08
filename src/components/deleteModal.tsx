@@ -1,7 +1,4 @@
-import { Trash } from "lucide-react";
 import { Dialog, DialogClose, DialogContent, DialogFooter, DialogTitle, DialogTrigger } from "./ui/dialog";
-import { DropdownMenuItem } from "./ui/dropdown-menu";
-import { Label } from "./ui/label";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { toast } from "sonner";

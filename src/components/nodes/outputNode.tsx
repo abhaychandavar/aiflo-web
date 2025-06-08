@@ -1,8 +1,7 @@
-import { NodeProps, Position } from "reactflow";
+import { Position } from "reactflow";
 import NodeComponent from "./node";
-import { ExtendedNodeProps, NodeRes } from "@/types/node";
+import { ExtendedNodeProps } from "@/types/node";
 import { useEffect, useState, useMemo, useCallback } from "react";
-import nodeService from "@/services/node";
 import { Textarea } from "../ui/textarea";
 import { debounce } from 'lodash';
 

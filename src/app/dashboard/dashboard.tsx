@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Search, Plus, Folder, FolderPlus, Grid, List, ChevronDown, Home, Files, BarChart, Settings, Database, AlignLeft, EllipsisVertical, Edit, Notebook, Eraser, Trash, Check, CircleCheck } from 'lucide-react';
+import { Search, Grid, List, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -20,9 +20,6 @@ import FloCard, { FLO_CARD } from '@/components/flowCard';
 import flowService from '@/services/flow';
 import moment from 'moment';
 import { timeDiffFromNow } from '@/lib/utils';
-import { DialogTrigger } from '@radix-ui/react-dialog';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import AddFlowModal from './addFlowModal';
 import settings from '@/config/app';
 import Image from 'next/image';

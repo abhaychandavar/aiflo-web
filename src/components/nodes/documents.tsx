@@ -1,10 +1,6 @@
 import { Position } from "reactflow";
 import NodeComponent from "./node";
-import { Input } from "../ui/input";
 import { ExtendedNodeProps } from "@/types/node";
-import SidePanel, { SidePanelBody } from "../ui/sidePanel";
-import { Label } from "@radix-ui/react-dropdown-menu";
-import { useState } from "react";
 
 const Document = (props: ExtendedNodeProps) => {
     return (

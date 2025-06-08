@@ -12,7 +12,7 @@ type argsType = {
     }
 }
 
-async function fetchStream<T = any>(
+async function fetchStream(
     args: argsType,
     method: string,
 ): Promise<void> {

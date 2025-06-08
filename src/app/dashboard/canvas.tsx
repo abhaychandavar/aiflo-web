@@ -9,7 +9,6 @@ import ReactFlow, {
   Edge,
   MiniMap,
   Node,
-  Position,
   ReactFlowProvider,
   useEdgesState,
   useNodesState,
@@ -25,22 +24,15 @@ import InputNode from '../../components/nodes/inputNode';
 import LLMNode from '../../components/nodes/llmNode';
 import OutputNode from '../../components/nodes/outputNode';
 import flowService from '@/services/flow';
-import { NodeRes } from '@/types/node';
 import nodeService from '@/services/node';
 import { Button } from '@/components/ui/button';
 import { Clock, Download, PlayIcon } from 'lucide-react';
-import { Viewport } from '@radix-ui/react-select';
 import { merge } from '@/lib/utils';
 import { API_STREAM_EVENT_TYPE } from '@/types/common';
 import Document from '../../components/nodes/documents';
 import SidePanel, { SidePanelBody, SidePanelDescription, SidePanelTitle } from '@/components/ui/sidePanel';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
 import LLMSidePanelBody from './sidePanels/llmSidePanelBody';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import FilePicker from '@/components/ui/filePicker';
 import InputSidePanelBody from './sidePanels/inputSidePanelBody';
 import DocumentSidePanelBody from './sidePanels/documentSidePanelBody';
 import ButtonEdge from '@/components/buttonEdge';

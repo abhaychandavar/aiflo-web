@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogFooter, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { timeDiffFromNow } from "@/lib/utils";
 import flowService from "@/services/flow";
@@ -60,6 +59,7 @@ const AddFlowModal = ({
             return res;
         }
         catch (err) {
+            console.debug(err)
             toast.error("Could not create the flow");
         }
     }

@@ -1,4 +1,4 @@
-import { NodeProps, Position } from "reactflow";
+import { Position } from "reactflow";
 import NodeComponent from "./node";
 import { SelectContent, SelectGroup, SelectItem, SelectLabel, SelectValue, Select, SelectTrigger } from "../ui/select";
 import { Textarea } from "../ui/textarea";

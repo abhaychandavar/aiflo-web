@@ -1,15 +1,11 @@
 "use client"
-// pages/login.tsx
-import { useState } from 'react';
 import { useForm, SubmitHandler } from 'react-hook-form'; // Import useForm and SubmitHandler
 import { zodResolver } from '@hookform/resolvers/zod'; // Optional: For Zod schema validation
 import * as z from 'zod'; // Optional: For Zod schema validation
 
-import { FcGoogle } from 'react-icons/fc'; // Google icon from react-icons
 import { useRouter } from 'next/navigation';
 
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'; // Ensure FormItem and FormLabel are imported if your UI lib uses them
-import { Label } from '@/components/ui/label'; // You might not need this if using FormLabel
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -34,12 +30,8 @@ const Login = () => {
     },
   });
 
-  const onSubmit: SubmitHandler<LoginFormInputs> = (data) => {
+  const onSubmit: SubmitHandler<LoginFormInputs> = () => {
     router.push('/dashboard');
-  };
-
-  const handleGoogleLogin = () => {
-    console.log('Google login');
   };
 
   return (
