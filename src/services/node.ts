@@ -17,11 +17,6 @@ class nodeService {
     }, onEvent: (data: API_STREAM_EVENT_TYPE) => Promise<void>, onDone: () => Promise<void>) => {
         await apiStream.post({ url: `<flow>/api/v1/flows/${flowID}/run`, onEvent, data: body, onDone });
     }
-
-    static getAllNodeConfigs = async (flowID: string) => {
-        const { data } = await api.get(`<flow>/api/v1/flows/${flowID}/nodes/config`);
-        return data;
-    }
 }
 
 export default nodeService;

@@ -230,21 +230,7 @@ export const Canvas = ({ flowID }: { flowID: string }) => {
         reactFlowInstance?.setViewport(res.flow.viewport)
       }
 
-      const configs = await nodeService.getAllNodeConfigs(flowID);
-
-      const updatedNodesMap: Record<string, Node> = {};
-      for (const config of configs) {
-        const node = (res.flow.nodes || []).find((n: Node) => n.id == config.nodeID);
-        if (!node) continue;
-        updatedNodesMap[node.id] = {
-          ...node,
-          data: {
-            ...(node.data || {}),
-            configData: config
-          }
-        };
-      }
-      setNodes((res.flow.nodes || []).map((n: Record<string, any>) => updatedNodesMap[n.id] || n));
+      setNodes(res.flow.nodes || []);
 
       setFlowLoaded(true);
     });
