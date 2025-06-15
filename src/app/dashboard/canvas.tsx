@@ -34,8 +34,12 @@ import SidePanel, { SidePanelBody, SidePanelDescription, SidePanelTitle } from '
 import { Badge } from '@/components/ui/badge';
 import LLMSidePanelBody from './sidePanels/llmSidePanelBody';
 import InputSidePanelBody from './sidePanels/inputSidePanelBody';
-import DocumentSidePanelBody from './sidePanels/documentSidePanelBody';
+import DocumentSidePanelBody, { FileUploadedType } from './sidePanels/documentSidePanelBody';
 import ButtonEdge from '@/components/buttonEdge';
+
+import { PDFDocument } from 'pdf-lib';
+import docService from '@/services/docService';
+import storage from '@/services/storage';
 
 const initialNodes: Node[] = []
 const initialEdges: Edge[] = []
@@ -104,14 +108,14 @@ export const Canvas = ({ flowID }: { flowID: string }) => {
   const nodeTypes = useMemo(() => ({
     start: (props: NodeProps) => <InputNode {...props} key={props.id} flowID={flowID} updateSelf={updateSelf} handleOpenSidePanel={
       handleOnNodeClick
-    }/>,
+    } />,
     llm: (props: NodeProps) => <LLMNode {...props} key={props.id} flowID={flowID} updateSelf={updateSelf} handleOpenSidePanel={
       handleOnNodeClick
-    }/>,
+    } />,
     res: (props: NodeProps) => <OutputNode {...props} key={props.id} flowID={flowID} updateSelf={updateSelf} handleOpenSidePanel={
       handleOnNodeClick
-    }/>,
-    document:  (props: NodeProps) => <Document {...props} key={props.id} flowID={flowID} updateSelf={updateSelf} handleOpenSidePanel={
+    } />,
+    document: (props: NodeProps) => <Document {...props} key={props.id} flowID={flowID} updateSelf={updateSelf} handleOpenSidePanel={
       handleOnNodeClick
     } />,
   }), []);
@@ -144,7 +148,7 @@ export const Canvas = ({ flowID }: { flowID: string }) => {
           }
           if (node) return node;
         }
-  
+
         delete toUpdateValues!.id;
         delete toUpdateValues!.type;
 
@@ -164,15 +168,15 @@ export const Canvas = ({ flowID }: { flowID: string }) => {
     updateNode({
       id: nodeID,
       toUpdateValues: {
-        data: { 
+        data: {
           runState: {
-                status: data.error ? 'error' : 'success',
-                data: [
-                  eventData
-                ],
-                at: new Date().toUTCString(),
-                runID: runID
-              }
+            status: data.error ? 'error' : 'success',
+            data: [
+              eventData
+            ],
+            at: new Date().toUTCString(),
+            runID: runID
+          }
         }
       }
     });
@@ -330,7 +334,7 @@ export const Canvas = ({ flowID }: { flowID: string }) => {
       x: event.clientX - bounds.left,
       y: event.clientY - bounds.top,
     });
-    
+
     const currTypeNodes = reactFlowInstance.getNodes().filter((n) => n.type === type);
 
     const newNode: Node = {
@@ -369,7 +373,7 @@ export const Canvas = ({ flowID }: { flowID: string }) => {
     },
     [nodes, edges]
   )
-  
+
   const getSidePanelNode = (id: string) => {
     const allNodes = reactFlowInstance?.getNodes();
     const node = allNodes?.find((n) => n.id === id);
@@ -377,8 +381,111 @@ export const Canvas = ({ flowID }: { flowID: string }) => {
     return node;
   }
 
+  async function getFileIdentifier(file: File, nodeID: string) {
+    const fileIdentifier = await docService.getFileRefID({
+      nodeID,
+      flowID,
+      fileName: file.name
+    });
+    if (!fileIdentifier) throw new Error("Could not process file");
+    return fileIdentifier.id;
+  }
+
+  async function handleFileUpload(file: File, nodeID: string) {
+    const maxSizeBytes = 5 * 1024 * 1024; // 5MB
+
+    if (!file.name.toLowerCase().endsWith('.pdf')) {
+      throw new Error("Only PDF files are supported.");
+    }
+
+    if (file.size <= maxSizeBytes) {
+      console.log("File is a PDF but not larger than 5MB. No need to split.");
+      const presignedURL = await storage.generateSequentialUploadSignedUrls({
+        flowID,
+        nodeID,
+        count: 1,
+        fileName: file.name
+      });
+
+      await storage.uploadBlob({
+        url: presignedURL.presignedURLs[0].uploadURL,
+        data: file
+      });
+
+      return;
+    }
+
+    const numberOfPresignedURLs = 10;
+    let preSignedURLIndex = 0;
+    let presignedURLs = await storage.generateSequentialUploadSignedUrls({
+      flowID,
+      nodeID,
+      count: numberOfPresignedURLs,
+      fileName: file.name
+    });
+
+    for await(const pageBlob of docService.yieldPDFPages(file)) {
+      if (preSignedURLIndex === numberOfPresignedURLs - 1) {
+        presignedURLs = await storage.generateSequentialUploadSignedUrls({
+          flowID,
+          nodeID,
+          count: numberOfPresignedURLs,
+          fileName: file.name
+        });
+        preSignedURLIndex = 0;
+      }
+      const { uploadURL } = presignedURLs.presignedURLs[preSignedURLIndex];
+      await storage.uploadBlob({
+        url: uploadURL,
+        data: pageBlob
+      });
+      preSignedURLIndex += 1;
+    }
+  }
+
+  async function onFileSelected(file: File, nodeID: string) {
+    try {
+      await handleFileUpload(file, nodeID);
+      const res = await docService.completeUpload({
+        nodeID,
+        flowID,
+        fileName: file.name
+      });
+      if (!res) throw new Error('Upload completion failed')
+      return res;
+    }
+    catch (error) {
+      console.debug('File upload failed', error);
+      throw new Error("File upload failed");
+    }
+  }
+
+  function getFileStatusFromRemoteFile(file: Record<string, any>) {
+    if (file.processedAt) return 'successful';
+    if (file.uploadedAt) return 'uploaded';
+  }
+
+  async function getRemoteFiles(nodeID: string): Promise<FileUploadedType[]> {
+    const files = await docService.getFiles({
+      nodeID,
+      flowID
+    })
+    return files.map((file: Record<string, any>) => ({
+      id: file.refID,
+      fileName: file.fileName,
+      fileExt: file.fileExt,
+      size: file.size,
+      filePath: file.path,
+      status: getFileStatusFromRemoteFile(file) as 'uploading' | 'uploaded' | 'errored' | 'successful' | 'indexing'
+    }));
+  }
+
   const getDocumentSidePanelBody = (node: any) => {
-    return <DocumentSidePanelBody node={node} />
+    return <DocumentSidePanelBody 
+      onFileSelected={(file: File) => onFileSelected(file, node.id)} 
+      getFileIdentifier={(file: File) => getFileIdentifier(file, node.id)} 
+      getRemoteFiles={() => getRemoteFiles(node.id)}
+    />
   }
 
   const getLLMSidePanelBody = (node: any) => {
@@ -395,7 +502,7 @@ export const Canvas = ({ flowID }: { flowID: string }) => {
     if (!sidePanelNode) return {
       body
     };
-  
+
     const getInputSidePanelBody = (node: any) => {
       return <InputSidePanelBody node={node} updateNode={updateNode} />;
     }
@@ -417,7 +524,7 @@ export const Canvas = ({ flowID }: { flowID: string }) => {
 
   useEffect(() => {
     const sidePanelData = getSidePanelData(sidePanel?.id || '');
-    const currSidePanelComponent =  <SidePanel
+    const currSidePanelComponent = <SidePanel
       key={String(sidePanel?.id || new Date())}
       open={sidePanel?.isOpen}
       onClose={() => setSidePanel({
@@ -451,9 +558,11 @@ export const Canvas = ({ flowID }: { flowID: string }) => {
     setEdges((edges) =>
       edges.map((edge) => {
         if (edge.id === edgeProp.id) {
-          return { ...edge, style: { stroke: 'blue' }, data: {
-            showDeleteButton: true
-          } };
+          return {
+            ...edge, style: { stroke: 'blue' }, data: {
+              showDeleteButton: true
+            }
+          };
         } else {
           return edge;
         }
@@ -465,9 +574,11 @@ export const Canvas = ({ flowID }: { flowID: string }) => {
     setEdges((edges) =>
       edges.map((edg) => {
         if (edg.id === edge.id) {
-          return { ...edg, style: { stroke: 'gray' }, data: {
-            showDeleteButton: false
-          } };
+          return {
+            ...edg, style: { stroke: 'gray' }, data: {
+              showDeleteButton: false
+            }
+          };
         } else {
           return edg;
         }

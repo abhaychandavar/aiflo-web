@@ -36,7 +36,6 @@ const FilePicker = ({onFileSelected}: {
             <p>Drop the document here...</p> :
             <p>Drag & drop a document here, or click to upload</p>
         }
-        {file && <p className="mt-2 text-sm text-success">Selected: {file.name}</p>}
       </div>
   );
 };
