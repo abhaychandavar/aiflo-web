@@ -20,16 +20,16 @@ import ReactFlow, {
   EdgeProps,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
-import InputNode from '../../components/nodes/inputNode';
-import LLMNode from '../../components/nodes/llmNode';
-import OutputNode from '../../components/nodes/outputNode';
+import InputNode from '@/components/nodes/inputNode';
+import LLMNode from '@/components/nodes/llmNode';
+import OutputNode from '@/components/nodes/outputNode';
 import flowService from '@/services/flow';
 import nodeService from '@/services/node';
 import { Button } from '@/components/ui/button';
 import { Clock, Download, PlayIcon } from 'lucide-react';
-import { merge } from '@/lib/utils';
+import { getFileStatusFromRemoteFile, merge } from '@/lib/utils';
 import { API_STREAM_EVENT_TYPE } from '@/types/common';
-import Document from '../../components/nodes/documents';
+import Document from '@/components/nodes/documents';
 import SidePanel, { SidePanelBody, SidePanelDescription, SidePanelTitle } from '@/components/ui/sidePanel';
 import { Badge } from '@/components/ui/badge';
 import LLMSidePanelBody from './sidePanels/llmSidePanelBody';
@@ -40,11 +40,20 @@ import ButtonEdge from '@/components/buttonEdge';
 import { PDFDocument } from 'pdf-lib';
 import docService from '@/services/docService';
 import storage from '@/services/storage';
+import TextNode from '@/components/nodes/textNode';
+import ImageNode from '@/components/nodes/imageNode';
+import ImageSidePanelBody from './sidePanels/imageSidePanel';
+import TextSidePanelBody from './sidePanels/textSidePanel';
+import TextOutputNode from '@/components/nodes/textOutputNode';
+import ImageOutputNode from '@/components/nodes/imageOutputNode';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 const initialNodes: Node[] = []
 const initialEdges: Edge[] = []
 
-export const Canvas = ({ flowID }: { flowID: string }) => {
+let resNode: any, textOutputNode: any;
+
+export const Canvas = ({ projectID, flowID, spaceID }: { projectID: string, flowID: string, spaceID: string }) => {
   const [flow, setFlow] = useState<{
     id: string,
     name: string
@@ -115,9 +124,21 @@ export const Canvas = ({ flowID }: { flowID: string }) => {
     res: (props: NodeProps) => <OutputNode {...props} key={props.id} flowID={flowID} updateSelf={updateSelf} handleOpenSidePanel={
       handleOnNodeClick
     } />,
-    document: (props: NodeProps) => <Document {...props} key={props.id} flowID={flowID} updateSelf={updateSelf} handleOpenSidePanel={
+    knowledgeBase: (props: NodeProps) => <Document {...props} key={props.id} flowID={flowID} updateSelf={updateSelf} handleOpenSidePanel={
       handleOnNodeClick
     } />,
+    text: (props: NodeProps) => <TextNode {...props} key={props.id} flowID={flowID} updateSelf={updateSelf} handleOpenSidePanel={
+      handleOnNodeClick
+    } />,
+    image: (props: NodeProps) => <ImageNode {...props} key={props.id} flowID={flowID} updateSelf={updateSelf} handleOpenSidePanel={
+      handleOnNodeClick
+    } />,
+    textOutput: (props: NodeProps) => <TextOutputNode {...props} key={props.id} flowID={flowID} updateSelf={updateSelf} handleOpenSidePanel={
+      handleOnNodeClick
+    } />,
+    imageOutput: (props: NodeProps) => <ImageOutputNode {...props} key={props.id} flowID={flowID} updateSelf={updateSelf} handleOpenSidePanel={
+      handleOnNodeClick
+    } />
   }), []);
 
   const updateNode = (opts: {
@@ -164,22 +185,44 @@ export const Canvas = ({ flowID }: { flowID: string }) => {
   }
 
   const handleRunEvent = async (eventData: API_STREAM_EVENT_TYPE) => {
-    const { nodeID, data, runID } = eventData;
-    updateNode({
-      id: nodeID,
-      toUpdateValues: {
-        data: {
-          runState: {
-            status: data.error ? 'error' : 'success',
-            data: [
-              eventData
-            ],
-            at: new Date().toUTCString(),
-            runID: runID
+    const { nodeID, data, runID, nodeType } = eventData;
+    resNode = resNode || nodes.find((n) => n.type === 'res');
+    if (resNode && (eventData.data?.delta || eventData.data?.text) && nodeType === 'res') {
+      textOutputNode = textOutputNode || nodes.find((n) => n.type === 'textOutput');
+      if (!textOutputNode) return;
+      updateNode({
+        id: textOutputNode.id,
+        toUpdateValues: {
+          data: {
+            runState: {
+              status: data.error ? 'error' : 'success',
+              data: [
+                eventData
+              ],
+              at: new Date().toUTCString(),
+              runID: runID
+            }
           }
         }
-      }
-    });
+      });
+    }
+    else {
+      updateNode({
+        id: nodeID,
+        toUpdateValues: {
+          data: {
+            runState: {
+              status: data.error ? 'error' : 'success',
+              data: [
+                eventData
+              ],
+              at: new Date().toUTCString(),
+              runID: runID
+            }
+          }
+        }
+      });
+    }
   }
 
   const handleRunEventDone = async () => {
@@ -197,7 +240,7 @@ export const Canvas = ({ flowID }: { flowID: string }) => {
     });
 
     setIsFlowRunning(true);
-    await nodeService.runFlow(String(flowID), {
+    await nodeService.runFlow(spaceID, projectID, String(flowID), {
       nodes: reactFlowInstance?.getNodes(),
       edges: reactFlowInstance?.getEdges(),
       viewport: reactFlowInstance?.getViewport()
@@ -222,7 +265,7 @@ export const Canvas = ({ flowID }: { flowID: string }) => {
   }, [nodes, edges]);
 
   useEffect(() => {
-    flowService.getFlow(flowID).then(async (res) => {
+    flowService.getFlow(flowID, projectID, spaceID).then(async (res) => {
       setFlow({
         id: res.id,
         name: res.name
@@ -244,6 +287,7 @@ export const Canvas = ({ flowID }: { flowID: string }) => {
     if (!flowLoaded) return;
 
     const saveFlow = async () => {
+      console.log('save flow: ', saveFlow)
       if (!hasChanges) return;
 
       try {
@@ -253,7 +297,7 @@ export const Canvas = ({ flowID }: { flowID: string }) => {
           viewport: reactFlowInstance?.getViewport(),
         };
 
-        await flowService.saveFlow({ id: flowID, flow });
+        await flowService.saveFlow(projectID, { id: flowID, flow }, spaceID);
         setHasChanges(false);
         console.log('Flow autosaved');
       } catch (err) {
@@ -288,34 +332,96 @@ export const Canvas = ({ flowID }: { flowID: string }) => {
     event.dataTransfer.dropEffect = 'move'
   }
 
-  const getNodeData = (type: string) => {
+  const getNodeData = (type: string, baseId: string) => {
+    if (!reactFlowInstance) return null;
+    const currTypeNodes = reactFlowInstance.getNodes().filter((n) => n.type === type);
+    const currentNodesTypeLength = currTypeNodes.length + 1;
+    
+    const id = `${baseId}-${currTypeNodes.length}`;
+    const uniqueIdentifier = new Date().toISOString();
     switch (type) {
       case 'output': return {
-        label: 'Output',
-        nodeName: 'Output',
-        description: `You'll find your application output here`
-      };
+        id,
+        data: {
+            uniqueIdentifier,
+            label: `Output ${currentNodesTypeLength}`,
+            nodeName: 'Output',
+            description: `You'll find your application output here`
+          }
+        };
       case 'start': return {
-        label: 'Input',
-        nodeName: 'Input',
-        description: `This is entry point of your application, you can add your query here to test out the flow.`
+        id,
+        data: {
+          uniqueIdentifier,
+          label: `Input ${currentNodesTypeLength}`,
+          nodeName: 'Input',
+          description: `This is entry point of your application, you can add your query here to test out the flow.`
+        }
       };
       case 'res': return {
-        label: 'Output',
-        nodeName: 'Output',
-        description: 'You can visualize your output here'
+        id,
+        data: {
+          uniqueIdentifier,
+          label: `Output ${currentNodesTypeLength}`,
+          nodeName: 'Output',
+          description: 'Connect the output types you want to support to this node'
+        }
       };
       case 'llm': return {
-        label: 'LLM',
-        nodeName: 'LLM',
-        description: `Configure your Large Language Model (LLM)`
+        id,
+        data: {
+          uniqueIdentifier,
+          label: `LLM ${currentNodesTypeLength}`,
+          nodeName: 'LLM',
+          description: `Configure your Large Language Model (LLM)`
+        }
       };
-      case 'document': return {
-        label: 'Document',
-        nodeName: 'Document',
-        description: `Search through your uploaded document`
+      case 'knowledgeBase': return {
+        id,
+        data: {
+          uniqueIdentifier,
+          label: `Knowledge base ${currentNodesTypeLength}`,
+          nodeName: 'Knowledge base',
+          description: `Add documents to your knowledge base and search through them`
+        }
       };
-      default: return {};
+      case 'text': return {
+        id,
+        data: {
+          uniqueIdentifier,
+          label: `Text ${currentNodesTypeLength}`,
+          nodeName: 'Text',
+          description: `You can add text input here.`
+        }
+      };
+      case 'image': return {
+        id,
+        data: {
+          uniqueIdentifier,
+          label: `Image ${currentNodesTypeLength}`,
+          nodeName: 'Image',
+          description: `You can add image input here`
+        }
+      };
+      case 'textOutput': return {
+        id,
+        data: {
+          uniqueIdentifier,
+          label: `Text output ${currentNodesTypeLength}`,
+          nodeName: 'Text output',
+          description: 'You can visualize your text output here'
+        }
+      };
+      case 'imageOutput': return {
+        id,
+        data: {
+          uniqueIdentifier,
+          label: `Image output ${currentNodesTypeLength}`,
+          nodeName: 'Image output',
+          description: 'You can visualize your image output here'
+        }
+      };
+      default: return null;
     }
   }
 
@@ -335,13 +441,14 @@ export const Canvas = ({ flowID }: { flowID: string }) => {
       y: event.clientY - bounds.top,
     });
 
-    const currTypeNodes = reactFlowInstance.getNodes().filter((n) => n.type === type);
+    const nodeDetails = getNodeData(type, id);
+    if (!nodeDetails) return;
 
     const newNode: Node = {
-      id: `${id}-${currTypeNodes.length}`,
+      id: nodeDetails.id,
       type: type,
       position,
-      data: getNodeData(type)
+      data: nodeDetails.data
     }
 
     setNodes((nds) => nds.concat(newNode))
@@ -364,6 +471,7 @@ export const Canvas = ({ flowID }: { flowID: string }) => {
               id: `${source}->${target}`,
               source,
               target,
+              type: 'buttonEdge'
             }))
           )
 
@@ -381,14 +489,13 @@ export const Canvas = ({ flowID }: { flowID: string }) => {
     return node;
   }
 
-  async function getFileIdentifier(file: File, nodeID: string) {
+  async function getFileIdentifier(file: File) {
     const fileIdentifier = await docService.getFileRefID({
-      nodeID,
-      flowID,
+      spaceID,
       fileName: file.name
     });
     if (!fileIdentifier) throw new Error("Could not process file");
-    return fileIdentifier.id;
+    return fileIdentifier.key;
   }
 
   async function handleFileUpload(file: File, nodeID: string) {
@@ -399,10 +506,8 @@ export const Canvas = ({ flowID }: { flowID: string }) => {
     }
 
     if (file.size <= maxSizeBytes) {
-      console.log("File is a PDF but not larger than 5MB. No need to split.");
       const presignedURL = await storage.generateSequentialUploadSignedUrls({
-        flowID,
-        nodeID,
+        spaceID,
         count: 1,
         fileName: file.name
       });
@@ -418,8 +523,7 @@ export const Canvas = ({ flowID }: { flowID: string }) => {
     const numberOfPresignedURLs = 10;
     let preSignedURLIndex = 0;
     let presignedURLs = await storage.generateSequentialUploadSignedUrls({
-      flowID,
-      nodeID,
+      spaceID,
       count: numberOfPresignedURLs,
       fileName: file.name
     });
@@ -427,8 +531,7 @@ export const Canvas = ({ flowID }: { flowID: string }) => {
     for await(const pageBlob of docService.yieldPDFPages(file)) {
       if (preSignedURLIndex === numberOfPresignedURLs - 1) {
         presignedURLs = await storage.generateSequentialUploadSignedUrls({
-          flowID,
-          nodeID,
+          spaceID,
           count: numberOfPresignedURLs,
           fileName: file.name
         });
@@ -445,11 +548,14 @@ export const Canvas = ({ flowID }: { flowID: string }) => {
 
   async function onFileSelected(file: File, nodeID: string) {
     try {
+      const node = nodes.find((n) => n.id === nodeID);
+      if (!node) throw new Error('Node not found');
+      const mode = node.data.config.mode;
       await handleFileUpload(file, nodeID);
       const res = await docService.completeUpload({
-        nodeID,
-        flowID,
-        fileName: file.name
+        spaceID: spaceID,
+        fileName: file.name,
+        mode
       });
       if (!res) throw new Error('Upload completion failed')
       return res;
@@ -460,18 +566,12 @@ export const Canvas = ({ flowID }: { flowID: string }) => {
     }
   }
 
-  function getFileStatusFromRemoteFile(file: Record<string, any>) {
-    if (file.processedAt) return 'successful';
-    if (file.uploadedAt) return 'uploaded';
-  }
-
-  async function getRemoteFiles(nodeID: string): Promise<FileUploadedType[]> {
+  async function getRemoteFiles(): Promise<FileUploadedType[]> {
     const files = await docService.getFiles({
-      nodeID,
-      flowID
-    })
+      spaceID
+    });
     return files.map((file: Record<string, any>) => ({
-      id: file.refID,
+      id: file.key,
       fileName: file.fileName,
       fileExt: file.fileExt,
       size: file.size,
@@ -480,16 +580,59 @@ export const Canvas = ({ flowID }: { flowID: string }) => {
     }));
   }
 
+  const getIncomingNodes = (
+    node: any, 
+    incomingNodes: Array<Node> = [], 
+    nodesMap: { nodes: Record<string, Node>, size: number } = { nodes: {}, size: 0 },
+    seenNodes: Set<string> = new Set()
+  ) => {
+    if (!nodesMap.size) {
+      for (const node of nodes) {
+        nodesMap.nodes[node.id] = node;
+        nodesMap.size += 1;
+      }
+    }
+    const immediateIncomingNodeIds = edges.filter((e) => e.source === node.id).map((e) => e.target);
+    for (const nodeId of immediateIncomingNodeIds) {
+      if (seenNodes.has(nodeId)) continue;
+      const node = nodesMap.nodes[nodeId];
+      incomingNodes.push(node);
+      getIncomingNodes(node, incomingNodes, nodesMap, seenNodes);
+      seenNodes.add(nodeId);
+    }
+    return incomingNodes;
+  }
+
   const getDocumentSidePanelBody = (node: any) => {
-    return <DocumentSidePanelBody 
+    const incomingNodes = getIncomingNodes(node)
+
+    return <DocumentSidePanelBody
+      incomingNodes={incomingNodes}
+      node={node}
+      updateNode={updateNode}
       onFileSelected={(file: File) => onFileSelected(file, node.id)} 
-      getFileIdentifier={(file: File) => getFileIdentifier(file, node.id)} 
-      getRemoteFiles={() => getRemoteFiles(node.id)}
+      getFileIdentifier={(file: File) => getFileIdentifier(file)} 
+      getRemoteFiles={() => getRemoteFiles()}
+      spaceID={spaceID}
+    />
+  }
+
+  const getImageSidePanelBody = (node: any) => {
+    const incomingNodes = getIncomingNodes(node)
+
+    return <ImageSidePanelBody
+      node={node}
+      updateNode={updateNode}
     />
   }
 
   const getLLMSidePanelBody = (node: any) => {
-    return <LLMSidePanelBody nodeId={node.id} data={node.data} updateNode={updateNode} />
+    const incomingNodes = getIncomingNodes(node);
+    return <LLMSidePanelBody spaceID={spaceID} node={node} updateNode={updateNode} incomingNodes={incomingNodes} projectID={projectID} />
+  }
+
+  const getTextSidePanelBody = (node: any) => {
+    return <TextSidePanelBody node={node} updateNode={updateNode} />
   }
 
   const getResNodeSidePanelBody = (node: any) => {
@@ -509,9 +652,11 @@ export const Canvas = ({ flowID }: { flowID: string }) => {
 
     switch (sidePanelNode.type) {
       case 'start': body = getInputSidePanelBody(sidePanelNode); break;
-      case 'document': body = getDocumentSidePanelBody(sidePanelNode); break;
+      case 'knowledgeBase': body = getDocumentSidePanelBody(sidePanelNode); break;
       case 'llm': body = getLLMSidePanelBody(sidePanelNode); break;
       case 'res': body = getResNodeSidePanelBody(sidePanelNode); break;
+      case 'image': body = getImageSidePanelBody(sidePanelNode); break;
+      case 'text': body = getTextSidePanelBody(sidePanelNode); break;
       default: break;
     }
     return {
@@ -559,7 +704,7 @@ export const Canvas = ({ flowID }: { flowID: string }) => {
       edges.map((edge) => {
         if (edge.id === edgeProp.id) {
           return {
-            ...edge, style: { stroke: 'blue' }, data: {
+            ...edge, style: { stroke: 'blue', filter: 'drop-shadow(0 0 8px rgba(0, 0, 255, 0.6))' }, data: {
               showDeleteButton: true
             }
           };
@@ -590,7 +735,8 @@ export const Canvas = ({ flowID }: { flowID: string }) => {
     <div className='flex flex-col w-full h-full'>
       <div className="flex w-full items-center justify-between p-2 gap-2 border-b-1">
         <h1>{flow?.name || ''}</h1>
-        <div className='flex items-center gap-2'>
+        <div className='flex items-center gap-5'>
+          <ThemeToggle />
           <Button onClick={handleFlowRun} variant={'secondary'}>
             Download
             <Download />

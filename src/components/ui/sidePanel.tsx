@@ -64,24 +64,23 @@ const SidePanel = ({ children, open, onClose }: SidePanelProps) => {
     };
 
     return (
-        <SidePanelContext.Provider value={{ 
-            isOpen, 
-            setIsOpen: handleClose, 
-            title, 
-            description, 
-            body, 
-            setTitle, 
-            setDescription, 
-            setBody 
+        <SidePanelContext.Provider value={{
+            isOpen,
+            setIsOpen: handleClose,
+            title,
+            description,
+            body,
+            setTitle,
+            setDescription,
+            setBody
         }}>
             {children}
             {shouldRender && (
-                <>  
+                <>
                     {/* Side panel */}
-                    <div className={`absolute right-0 top-0 z-50 min-h-full w-80 bg-background border-l shadow-lg transform transition-transform duration-300 ease-in-out ${
-                        isOpen ? 'translate-x-0' : 'translate-x-full'
-                    }`}>
-                        <div className="flex flex-col gap-5">
+                    <div className={`absolute right-0 top-0 z-50 h-full w-100 bg-background border-l shadow-lg transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : 'translate-x-full'
+                        }`}>
+                        <div className="flex flex-col gap-5 overflow-y-auto h-full">
                             {/* Header */}
                             <div className="flex justify-between items-center p-5">
                                 {title}
@@ -99,7 +98,7 @@ const SidePanel = ({ children, open, onClose }: SidePanelProps) => {
                                 {description}
                             </VerticalGroup> : <></>}
                             <Separator className="mb-4" />
-                            <div className="pl-5 pr-5">
+                            <div className="">
                                 {body}
                             </div>
                         </div>

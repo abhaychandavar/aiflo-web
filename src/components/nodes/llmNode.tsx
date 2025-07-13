@@ -7,6 +7,9 @@ import { DropdownMenuItem } from "../ui/dropdown-menu";
 import { Settings } from "lucide-react";
 import { ExtendedNodeProps } from "@/types/node";
 import TitleAndSubtitle from "../ui/titleAndSubtitle";
+import nodeOptions from "@/config/nodeOptions";
+
+export const accessibleIncomingNodeOptions = [nodeOptions.knowledgeBase, nodeOptions.llm, nodeOptions.start, nodeOptions.textInput];
 
 const LLMNode = (props: ExtendedNodeProps) => {
 
@@ -80,7 +83,7 @@ const LLMNode = (props: ExtendedNodeProps) => {
         </SelectContent>
     </Select>, [props.data?.config?.model]);
 
-    const llmNodeBody = <div className="w-full flex flex-col gap-2">
+    const llmNodeBody = <div className="w-full flex flex-col gap-2 blur-[0.2]">
         <TitleAndSubtitle title="Large Language Model" description="Select the LLM you want to use"/>
         {
             selectLLMEle
@@ -95,7 +98,13 @@ const LLMNode = (props: ExtendedNodeProps) => {
             onClick={onTextAreaClick}
             onMouseDown={onTextAreaClick}
             onChange={handleInstructionsChange}
-            value={props.data?.config?.instructions}
+            value={props.data?.config?.instructions || `Use only the provided context to answer. Follow these rules:
+* Cite using [^#] immediately after the relevant phrase (no space before it).
+* Do not invent citations or include info not in context.
+* End with a <citations> block listing all citations used.
+* Match citations exactly from the <available_citations> section although you may include additional important citation details (e.g., links) from the context if available
+Example: "Photosynthesis is the process by which green plants convert sunlight into energy[^1].
+<citations> [^1] Page 1 </citations>"`}
         />
         <TitleAndSubtitle 
             title="Prompt"

@@ -10,12 +10,12 @@ class nodeService {
         return nodeData;
     }
 
-    static runFlow = async (flowID: string, body: {
+    static runFlow = async (spaceID: string, projectID: string, flowID: string, body: {
         nodes: any,
         edges: any,
         viewport: any
     }, onEvent: (data: API_STREAM_EVENT_TYPE) => Promise<void>, onDone: () => Promise<void>) => {
-        await apiStream.post({ url: `<flow>/api/v1/flows/${flowID}/run`, onEvent, data: body, onDone });
+        await apiStream.post({ url: `<flow>/api/v1/spaces/${spaceID}/projects/${projectID}/flows/${flowID}/run`, onEvent, data: body, onDone });
     }
 }
 

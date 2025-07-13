@@ -1,6 +1,9 @@
 import { Position } from "reactflow";
 import NodeComponent from "./node";
 import { ExtendedNodeProps } from "@/types/node";
+import nodeOptions from "@/config/nodeOptions";
+
+export const accessibleIncomingNodeOptions = [nodeOptions.knowledgeBase, nodeOptions.llm, nodeOptions.start, nodeOptions.textInput];
 
 const Document = (props: ExtendedNodeProps) => {
     return (
@@ -25,8 +28,8 @@ const Document = (props: ExtendedNodeProps) => {
             id={props.id}
             type={props.type}
             data={{
-                label: "Document",
-                nodeName: "Document",
+                label: "Knowledge base",
+                nodeName: "Knowledge base",
                 ...(props.data || {})
             }} 
             selected={props.selected} 

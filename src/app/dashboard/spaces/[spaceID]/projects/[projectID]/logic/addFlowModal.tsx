@@ -1,6 +1,6 @@
 'use client'
 
-import { FLO_CARD } from "@/components/flowCard";
+import { FLOW } from "@/components/flowCard";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogFooter, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -18,14 +18,18 @@ import { toast } from "sonner"
 
 const formSchema = z.object({
   name: z.string({ message: "Name required." }),
-  description: z.string().optional(), // Or more complex password rules
+  description: z.string().optional(),
 });
 type AddFlowSchema = z.infer<typeof formSchema>; // Or define manually: { email: string; password: string; }
 
 const AddFlowModal = ({
-    handleFlowAdded
+    handleFlowAdded,
+    projectID,
+    spaceID
 }: {
-    handleFlowAdded: (flowData: FLO_CARD) => void
+    handleFlowAdded: (flowData: FLOW) => void,
+    projectID: string,
+    spaceID: string
 }) => {
     const [open, setOpen] = useState(false);
     const form = useForm<AddFlowSchema>({
@@ -39,18 +43,13 @@ const AddFlowModal = ({
     const createFlow: SubmitHandler<AddFlowSchema> = async (data) => {
         try {
             const { name, description } = data;
-            const res = await flowService.createFlow(name, description);
+            const res = await flowService.createFlow(projectID, name, spaceID, description);
             handleFlowAdded({
                 id: res.id,
                 description: res.description || undefined,
                 createdAt: timeDiffFromNow(moment(res.createdAt).local().toDate()),
                 name: res.name,
-                status: res.status,
-                user: {
-                    id: res.user.id,
-                    imageURL: res.user.imageURL || undefined,
-                    name: res.user.name
-                }
+                status: res.status
             });
             setOpen(false);
 
@@ -58,9 +57,9 @@ const AddFlowModal = ({
 
             return res;
         }
-        catch (err) {
+        catch (err: any) {
             console.debug(err)
-            toast.error("Could not create the flow");
+            toast.error(err.uiMessage || 'Could not create flow');
         }
     }
 

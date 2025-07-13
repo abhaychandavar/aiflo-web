@@ -13,3 +13,10 @@ export type API_STREAM_EVENT_TYPE = {
     runID: string,
     source: string
 }
+
+export type SPACE = {
+    id: string,
+    name: string,
+    createdAt: string,
+    updatedAt: string
+}

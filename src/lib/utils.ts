@@ -78,6 +78,10 @@ export const merge = (obj1: Record<string, any>, obj2: Record<string, any>, merg
     const val1 = obj1[key];
     const val2 = obj2[key];
     if (Array.isArray(val1) && Array.isArray(val2)) {
+      if (!mergeLeafNodes) {
+        newObj[key] = val2;
+        continue;
+      }
       const modifiedVal2s = [...val1];
       for (const val of val2) {
         if (!isObject(val)) {
@@ -121,3 +125,9 @@ export const merge = (obj1: Record<string, any>, obj2: Record<string, any>, merg
   }
   return newObj;
 };
+
+export function getFileStatusFromRemoteFile(file: Record<string, any>) {
+  if (file.uploadedAt && !file.processedAt) return 'uploading';
+  if (file.processedAt) return 'successful';
+  if (file.uploadedAt) return 'uploaded';
+}

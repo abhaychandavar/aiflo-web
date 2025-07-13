@@ -20,19 +20,20 @@ class docService {
     }
 
     static async completeUpload({
-        nodeID,
-        flowID,
-        fileName
+        spaceID,
+        fileName,
+        mode
     }: {
-        nodeID: string,
-        flowID: string,
-        fileName: string
+        spaceID: string,
+        fileName: string,
+        mode: string
     }) {
         try {
             const { data } = await api.post(
-                `<docProcessor>/api/v1/doc-processor/storage/flows/${flowID}/nodes/${nodeID}/complete-upload`,
+                `<docProcessor>/api/v1/doc-processor/storage/spaces/${spaceID}/complete-upload`,
                 {
-                    fileName
+                    fileName,
+                    mode
                 }
             );
             return data;
@@ -44,15 +45,13 @@ class docService {
     }
 
     static async getFiles({
-        nodeID,
-        flowID
+        spaceID
     }: {
-        nodeID: string,
-        flowID: string
+        spaceID: string
     }) {
         try {
             const { data } = await api.get(
-                `<docProcessor>/api/v1/doc-processor/storage/flows/${flowID}/nodes/${nodeID}/files`
+                `<docProcessor>/api/v1/doc-processor/storage/spaces/${spaceID}/files`
             );
             return data;
         }
@@ -63,17 +62,15 @@ class docService {
     }
 
     static async getFileRefID({
-        nodeID,
-        flowID,
+        spaceID,
         fileName
     }: {
-        nodeID: string,
-        flowID: string,
+        spaceID: string,
         fileName: string
     }) {
         try {
             const { data } = await api.post(
-                `<docProcessor>/api/v1/doc-processor/storage/flows/${flowID}/nodes/${nodeID}/files/ref-id`,
+                `<docProcessor>/api/v1/doc-processor/storage/spaces/${spaceID}/files/ref-id`,
                 {
                     fileName
                 }
@@ -82,6 +79,25 @@ class docService {
         }
         catch (err) {
             console.debug("[getFileRefID] Could not generate file ref ID", err);
+            return null;
+        }
+    }
+
+    static async deleteDocument({
+        spaceID,
+        id
+    }: {
+        spaceID: string,
+        id: string
+    }) {
+        try {
+            const { data } = await api.delete(
+                `<docProcessor>/api/v1/doc-processor/storage/spaces/${spaceID}/documents/${id}`
+            );
+            return data;
+        }
+        catch (err) {
+            console.debug("[deleteDocument] Could not complete upload", err);
             return null;
         }
     }

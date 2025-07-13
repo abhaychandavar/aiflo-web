@@ -3,19 +3,17 @@ import axios from "axios";
 
 class storage {
     static async generateSequentialUploadSignedUrls({
-        flowID,
-        nodeID,
+        spaceID,
         count,
         fileName
     }:{
-        flowID: string, 
-        nodeID: string,
+        spaceID: string,
         count: number,
         fileName: string
     }) {
         try {
             const { data } = await api.post(
-                `<docProcessor>/api/v1/doc-processor/storage/flows/${flowID}/nodes/${nodeID}/generate/sequential/signed-urls`,
+                `<docProcessor>/api/v1/doc-processor/storage/spaces/${spaceID}/generate/sequential/signed-urls`,
                 {
                     count,
                     fileName

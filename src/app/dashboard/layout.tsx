@@ -6,7 +6,7 @@ import { ReactNode } from "react";
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <SessionProvider>
-      {children}
+          {children}
     </SessionProvider>
   );
 }

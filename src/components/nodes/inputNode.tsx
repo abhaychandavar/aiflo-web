@@ -32,6 +32,12 @@ const StartNode = (props: ExtendedNodeProps) => {
                 {
                     position: Position.Right,
                     type: "target"
+                },
+                {
+                    position: Position.Left,
+                    type: "source",
+                    color: "#FFD400",
+                    about: "inputType"
                 }
             ]
             }
@@ -43,10 +49,7 @@ const StartNode = (props: ExtendedNodeProps) => {
             isConnectable={props.isConnectable} 
             xPos={props.xPos} 
             yPos={props.yPos} 
-            dragging={props.dragging}  
-            body={
-                <Textarea onChange={handleInputTextChange} value={data.config?.text} />
-            }
+            dragging={props.dragging}
         />
     );
 }
