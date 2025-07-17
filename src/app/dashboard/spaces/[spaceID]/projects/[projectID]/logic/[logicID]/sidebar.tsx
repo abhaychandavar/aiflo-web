@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import flowService from "@/services/flow";
+import { useDebounce } from "@/hooks/useDebounce";
 
 import {
   Accordion,
@@ -14,7 +15,7 @@ import {
 } from "@/components/ui/accordion";
 
 import { getIcon } from "@/lib/getIcon";
-import { GripVertical, ChevronDown, ChevronRight, ChevronLeft } from "lucide-react";
+import { GripVertical, ChevronDown, ChevronRight, ChevronLeft, Share2, Network } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 
@@ -33,14 +34,26 @@ type GroupedResponse = Record<
 
 export const Sidebar = ({
   projectID,
-  spaceID
+  spaceID,
+  flowID
 }: {
   projectID: string,
-  spaceID: string
+  spaceID: string,
+  flowID: string
 }) => {
   const [search, setSearch] = useState("");
   const [groupedNodes, setGroupedNodes] = useState<GroupedResponse>({});
+  const [flowNodes, setFlowNodes] = useState<Array<{
+      id: string;
+      label: string;
+      type: string;
+      parent?: string;
+  }>>([]);
   const [expandedParentIds, setExpandedParentIds] = useState<Record<string, boolean>>({});
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoadingFlows, setIsLoadingFlows] = useState(false);
+  const debouncedSearch = useDebounce(search, 300);
   const router = useRouter()
   
   const toggleExpand = (id: string) => {
@@ -57,6 +70,110 @@ export const Sidebar = ({
     })();
   }, []);
 
+  useEffect(() => {
+    getFlows(1, true);
+  }, [debouncedSearch]);
+
+  async function getFlows(page: number, overwrite: boolean = false) {
+    setIsLoadingFlows(true);
+    try {
+      const flows = await flowService.getFlows(projectID, page, true, spaceID, search);
+    
+      const flowNodes: Array<{
+          id: string;
+          label: string;
+          type: string;
+          parent?: string;
+      }> = [];
+
+      for (const flow of flows) {
+        if (flow.id === flowID) continue;
+        flowNodes.push({
+          id: flow.id,
+          label: flow.name,
+          type: 'flow'
+        });
+      }
+
+      if (overwrite) {
+        setFlowNodes(flowNodes);
+      }
+      else if (page === 1) {
+        setFlowNodes(flowNodes);
+      } else {
+        setFlowNodes(prev => [...prev, ...flowNodes]);
+      }
+      setCurrentPage(page);
+    } finally {
+      setIsLoadingFlows(false);
+    }
+  }
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const bottom = e.currentTarget.scrollHeight - e.currentTarget.scrollTop === e.currentTarget.clientHeight;
+    if (bottom && hasMore) {
+      getFlows(currentPage + 1);
+    }
+  };
+
+  const renderFlowsContent = () => {
+    if (isLoadingFlows) {
+      return (
+        <div className="pl-2 space-y-2">
+          {[1, 2, 3].map((i) => (
+            <div 
+              key={i} 
+              className="bg-background border rounded-md p-2 flex items-center justify-between gap-2 animate-pulse"
+            >
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded-full bg-muted-foreground/20" />
+                <div className="h-4 w-32 bg-muted-foreground/20 rounded" />
+              </div>
+              <div className="w-4 h-4 rounded bg-muted-foreground/20" />
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    return (
+      <div className="pl-2">
+        {flowNodes.map((flow) => (
+          <div
+            key={flow.id}
+            className="bg-background border rounded-md p-2 cursor-pointer hover:bg-accent flex items-center justify-between gap-2 drag-item mb-2"
+            draggable
+            onDragStart={(e) => {
+              e.dataTransfer.setData(
+                "application/reactflow",
+                JSON.stringify({ type: flow.type, id: flow.id, flowID: flow.id, flowName: flow.label })
+              );
+              e.dataTransfer.effectAllowed = "move";
+
+              const node = e.currentTarget;
+              const clone = node.cloneNode(true) as HTMLElement;
+              clone.style.position = "absolute";
+              clone.style.top = "-9999px";
+              clone.style.left = "-9999px";
+              clone.style.borderRadius = "0.375rem";
+              clone.style.boxShadow = "0 0 4px rgba(0, 0, 0, 0.1)";
+              clone.style.background = getComputedStyle(node).backgroundColor;
+              document.body.appendChild(clone);
+              e.dataTransfer.setDragImage(clone, 10, 10);
+              setTimeout(() => document.body.removeChild(clone), 0);
+            }}
+          >
+            <div className="flex items-center gap-2">
+              <Share2 className="w-4 h-4 text-muted-foreground" />
+              {flow.label}
+            </div>
+            <GripVertical size={14} className="text-muted-foreground" />
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   return (
     <aside className="w-64 bg-background p-4 border-r h-full flex flex-col">
       <div className="flex gap-2">
@@ -68,8 +185,9 @@ export const Sidebar = ({
         onChange={(e) => setSearch(e.target.value)}
       />
       </div>
-      <ScrollArea className="flex-1 pr-2">
+      <ScrollArea className="flex-1 pr-2" onScroll={handleScroll}>
         <Accordion type="multiple" className="w-full gap-2">
+          {/* Layout Nodes Section */}
           {Object.entries(groupedNodes).map(([groupId, group]) => {
             const GroupIcon = getIcon(groupId);
 
@@ -161,7 +279,7 @@ export const Sidebar = ({
                                       onDragStart={(e) => {
                                         e.dataTransfer.setData(
                                           "application/reactflow",
-                                          JSON.stringify({ type: child.type, id: child.id })
+                                          JSON.stringify({ type: child.type, id: child.id, name: child.label })
                                         );
                                         e.dataTransfer.effectAllowed = "move";
 
@@ -197,6 +315,19 @@ export const Sidebar = ({
               </AccordionItem>
             );
           })}
+
+          {/* Flows Section */}
+          <AccordionItem value="flows">
+            <AccordionTrigger className="text-sm flex gap-2 hover:bg-muted p-2 m-2 no-underline">
+              <div className="flex gap-2 items-center">
+                <Network className="text-muted-foreground" size={14} />
+                Flows
+              </div>
+            </AccordionTrigger>
+            <AccordionContent>
+              {renderFlowsContent()}
+            </AccordionContent>
+          </AccordionItem>
         </Accordion>
       </ScrollArea>
     </aside>

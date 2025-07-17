@@ -10,7 +10,7 @@ const Dashboard = () => {
     return (
         <div className="flex flex-col h-screen w-screen">
             <div className="flex h-full">
-                <Sidebar projectID={projectID as string} spaceID={spaceID as string}/>
+                <Sidebar projectID={projectID as string} spaceID={spaceID as string} flowID={flowID as string}/>
                 <Canvas flowID={flowID as string} projectID={projectID as string} spaceID={spaceID as string}/>
             </div>
         </div>

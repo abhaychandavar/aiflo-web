@@ -47,6 +47,8 @@ import TextSidePanelBody from './sidePanels/textSidePanel';
 import TextOutputNode from '@/components/nodes/textOutputNode';
 import ImageOutputNode from '@/components/nodes/imageOutputNode';
 import { ThemeToggle } from '@/components/theme-toggle';
+import FlowNode from '@/components/nodes/flowNode';
+import { SaveIndicator } from '@/components/ui/save-indicator';
 
 const initialNodes: Node[] = []
 const initialEdges: Edge[] = []
@@ -69,6 +71,7 @@ export const Canvas = ({ projectID, flowID, spaceID }: { projectID: string, flow
   const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance | null>(null)
   const wrapperRef = useRef<HTMLDivElement>(null)
   const [hasChanges, setHasChanges] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const saveIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const [flowLoaded, setFlowLoaded] = useState(false);
   const [isFlowRunning, setIsFlowRunning] = useState<boolean>();
@@ -137,6 +140,9 @@ export const Canvas = ({ projectID, flowID, spaceID }: { projectID: string, flow
       handleOnNodeClick
     } />,
     imageOutput: (props: NodeProps) => <ImageOutputNode {...props} key={props.id} flowID={flowID} updateSelf={updateSelf} handleOpenSidePanel={
+      handleOnNodeClick
+    } />,
+    flow: (props: NodeProps) => <FlowNode {...props} key={props.id} flowID={flowID} updateSelf={updateSelf} handleOpenSidePanel={
       handleOnNodeClick
     } />
   }), []);
@@ -256,13 +262,9 @@ export const Canvas = ({ projectID, flowID, spaceID }: { projectID: string, flow
       const nodesToDelete = nodes.filter(n => n.id == id);
       reactFlowInstance?.deleteElements({ nodes: nodesToDelete });
     }
-    window.addEventListener('delete-node', handler)
+    window.addEventListener('delete-node', handler);
     return () => window.removeEventListener('delete-node', handler)
   }, [nodes])
-
-  useEffect(() => {
-    setHasChanges(true);
-  }, [nodes, edges]);
 
   useEffect(() => {
     flowService.getFlow(flowID, projectID, spaceID).then(async (res) => {
@@ -283,27 +285,28 @@ export const Canvas = ({ projectID, flowID, spaceID }: { projectID: string, flow
     });
   }, []);
 
+  const saveFlow = async () => {
+    if (!hasChanges) return;
+
+    try {
+      setIsSaving(true);
+      const flow = {
+        nodes: reactFlowInstance?.getNodes(),
+        edges: reactFlowInstance?.getEdges(),
+        viewport: reactFlowInstance?.getViewport(),
+      };
+
+      await flowService.saveFlow(projectID, { id: flowID, flow }, spaceID);
+      setHasChanges(false);
+    } catch (err) {
+      console.error('Save errored out:', err);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   useEffect(() => {
     if (!flowLoaded) return;
-
-    const saveFlow = async () => {
-      console.log('save flow: ', saveFlow)
-      if (!hasChanges) return;
-
-      try {
-        const flow = {
-          nodes: reactFlowInstance?.getNodes(),
-          edges: reactFlowInstance?.getEdges(),
-          viewport: reactFlowInstance?.getViewport(),
-        };
-
-        await flowService.saveFlow(projectID, { id: flowID, flow }, spaceID);
-        setHasChanges(false);
-        console.log('Flow autosaved');
-      } catch (err) {
-        console.error('Auto save errored out:', err);
-      }
-    };
 
     saveIntervalRef.current = setInterval(saveFlow, 5000);
 
@@ -313,6 +316,12 @@ export const Canvas = ({ projectID, flowID, spaceID }: { projectID: string, flow
       }
     };
   }, [flowLoaded, hasChanges, reactFlowInstance]);
+
+  // Add effect to track changes
+  useEffect(() => {
+    if (!flowLoaded) return;
+    setHasChanges(true);
+  }, [nodes, edges]);
 
   const onConnect = useCallback(
     (params: Edge | Connection) => {
@@ -332,7 +341,7 @@ export const Canvas = ({ projectID, flowID, spaceID }: { projectID: string, flow
     event.dataTransfer.dropEffect = 'move'
   }
 
-  const getNodeData = (type: string, baseId: string) => {
+  const getNodeData = (type: string, baseId: string, data: Record<string, any> = {}, flowID?: string) => {
     if (!reactFlowInstance) return null;
     const currTypeNodes = reactFlowInstance.getNodes().filter((n) => n.type === type);
     const currentNodesTypeLength = currTypeNodes.length + 1;
@@ -340,6 +349,16 @@ export const Canvas = ({ projectID, flowID, spaceID }: { projectID: string, flow
     const id = `${baseId}-${currTypeNodes.length}`;
     const uniqueIdentifier = new Date().toISOString();
     switch (type) {
+      case 'flow': return {
+        id,
+        data: {
+          uniqueIdentifier,
+          label: `Flow ${currentNodesTypeLength}`,
+          nodeName: 'Flow',
+          description: 'A reusable flow that can be connected to other nodes',
+          config: data
+        }
+      };
       case 'output': return {
         id,
         data: {
@@ -430,7 +449,7 @@ export const Canvas = ({ projectID, flowID, spaceID }: { projectID: string, flow
 
     const nodeData = event.dataTransfer.getData('application/reactflow');
     const parsedNodeData = JSON.parse(nodeData);
-    const { type, id } = parsedNodeData;
+    const { type, id, flowID, flowName } = parsedNodeData;
 
     if (!type || !reactFlowInstance || !wrapperRef.current) return
 
@@ -441,9 +460,14 @@ export const Canvas = ({ projectID, flowID, spaceID }: { projectID: string, flow
       y: event.clientY - bounds.top,
     });
 
-    const nodeDetails = getNodeData(type, id);
-    if (!nodeDetails) return;
+    const nodeDetails = getNodeData(type, id, {
+      flowName,
+      flowID
+    }, flowID);
 
+
+    if (!nodeDetails) return;
+    
     const newNode: Node = {
       id: nodeDetails.id,
       type: type,
@@ -736,6 +760,10 @@ export const Canvas = ({ projectID, flowID, spaceID }: { projectID: string, flow
       <div className="flex w-full items-center justify-between p-2 gap-2 border-b-1">
         <h1>{flow?.name || ''}</h1>
         <div className='flex items-center gap-5'>
+          <SaveIndicator 
+            status={isSaving ? 'saving' : hasChanges ? 'unsaved' : 'saved'} 
+            onSave={saveFlow}
+          />
           <ThemeToggle />
           <Button onClick={handleFlowRun} variant={'secondary'}>
             Download

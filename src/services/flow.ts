@@ -30,7 +30,8 @@ class flowService {
     projectID: string,
     page: number,
     minimal: boolean,
-    spaceID: string
+    spaceID: string,
+    search?: string
   ): Promise<
     Array<{
       user: {
@@ -50,7 +51,7 @@ class flowService {
   > => {
     try {
       const { data } = await api.get(
-        `<flow>/api/v1/spaces/${spaceID}/projects/${projectID}/flows?page=${page}&minimal=${minimal}`
+        `<flow>/api/v1/spaces/${spaceID}/projects/${projectID}/flows?page=${page}&minimal=${minimal}&search=${search || ''}`
       );
       return data.flows;
     } catch (err) {

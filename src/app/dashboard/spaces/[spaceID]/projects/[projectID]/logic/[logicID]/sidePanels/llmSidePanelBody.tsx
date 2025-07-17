@@ -3,6 +3,7 @@ import SmartTextArea from "@/components/smartTextArea";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea";
 import TitleAndSubtitle from "@/components/ui/titleAndSubtitle";
+import { Checkbox } from "@/components/ui/checkbox";
 import api from "@/lib/api";
 import flowService from "@/services/flow";
 import { useEffect, useState } from "react";
@@ -17,6 +18,7 @@ const LLMSidePanelBody = ({ node, updateNode, incomingNodes, projectID, spaceID 
     }>>([]);
     const [instructions, setInstructions] = useState(data?.config?.instructions || "");
     const [prompt, setPrompt] = useState(data?.config?.prompt || "");
+    const [streamData, setStreamData] = useState(data?.config?.streamData ?? true);
 
     useEffect(() => {
         updateNode({
@@ -43,6 +45,19 @@ const LLMSidePanelBody = ({ node, updateNode, incomingNodes, projectID, spaceID 
             }
         })
     }, [instructions]);
+
+    useEffect(() => {
+        updateNode({
+            id: nodeId,
+            toUpdateValues: {
+                data: {
+                    config: {
+                        streamData
+                    }
+                }
+            }
+        })
+    }, [streamData]);
 
     const incomingFilteredNodes = incomingNodes.filter((node) => accessibleIncomingNodeOptions.find((opt) => opt.type === node.type)).map((node) => {
         const allowedNode = accessibleIncomingNodeOptions.find((opt) => opt.type === node.type);
@@ -96,6 +111,19 @@ const LLMSidePanelBody = ({ node, updateNode, incomingNodes, projectID, spaceID 
                 </SelectGroup>
             </SelectContent>
         </Select>
+        <div className="flex items-center space-x-2 mt-2">
+            <Checkbox 
+                id="streamData" 
+                checked={streamData}
+                onCheckedChange={(checked) => setStreamData(checked as boolean)}
+            />
+            <label
+                htmlFor="streamData"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            >
+                Stream data
+            </label>
+        </div>
         <TitleAndSubtitle
             title="Instructions"
             description="Instruct AI how you'd like it to respond. You can include personality, tone etc."
