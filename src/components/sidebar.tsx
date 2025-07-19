@@ -28,7 +28,6 @@ const Sidebar = ({ children }: {
       }
     </div>
     <div className="p-4 border-t border-border space-y-4">
-      <ThemeToggle />
       <div className="flex items-center space-x-2">
         <div className="rounded-full w-8 h-8 flex items-center justify-center">
           M

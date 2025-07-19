@@ -33,6 +33,8 @@ import {
 import { SPACE } from "@/types/common";
 import { useRouter } from "next/navigation";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { TopBar } from '@/components/ui/top-bar';
+import { SearchBar } from "@/components/ui/search-bar";
 
 export default function Dashboard() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
@@ -119,26 +121,27 @@ export default function Dashboard() {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Header */}
-        <header className="border-b border-border px-6 py-4 flex items-center justify-between">
-          <h1>My Projects</h1>
-          <div className="flex gap-5 items-center">
-            <ThemeToggle />
-            <AddProjectModal
-              spaceID={spaceID}
-              handleProjectAdded={(data: PROJECT) =>
-                setProjects((prev) => [data, ...prev])
-              }
-            />
-          </div>
-        </header>
+        <TopBar
+          left={<h1>My Projects</h1>}
+          right={
+            <div className="flex gap-5 items-center">
+              <ThemeToggle />
+              <AddProjectModal
+                spaceID={spaceID}
+                handleProjectAdded={(data: PROJECT) =>
+                  setProjects((prev) => [data, ...prev])
+                }
+              />
+            </div>
+          }
+        />
 
         {/* Search and Options */}
         <div className="p-6 border-b border-border flex items-center justify-between">
-          <div className="relative flex-1 max-w-xl">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-            <Input placeholder="Search" className="pl-10" />
-          </div>
+          <SearchBar
+            containerClassName="max-w-xl"
+            placeholder="Search projects..."
+          />
           <div className="flex items-center space-x-2 ml-4">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

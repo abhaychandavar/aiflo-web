@@ -10,9 +10,9 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger
-} from '../ui/dropdown-menu'
-import { Separator } from '../ui/separator'
-import { Textarea } from '../ui/textarea'
+} from '../../ui/dropdown-menu'
+import { Separator } from '../../ui/separator'
+import { Textarea } from '../../ui/textarea'
 
 interface NodeComponentProps extends NodeProps {
   body?: React.JSX.Element,
@@ -203,4 +203,4 @@ const NodeComponent = ({ data, id, body, handles, className, options, onClick, u
   )
 }
 
-export default NodeComponent
+export default NodeComponent 

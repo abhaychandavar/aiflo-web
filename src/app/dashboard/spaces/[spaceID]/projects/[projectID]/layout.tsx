@@ -56,7 +56,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           ))}
         </Sidebar>
       )}
-      <div className="w-full">{children}</div>
+      <div className="flex-1">{children}</div>
     </div>
   );
 }

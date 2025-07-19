@@ -1,16 +1,16 @@
 "use client";
 
 import { Position } from "reactflow";
-import NodeComponent from "./node";
-import { Textarea } from "../ui/textarea";
-import { ExtendedNodeProps } from "@/types/node";
-import FilePicker from "../ui/filePicker";
+import NodeComponent from "../base/node";
+import { Textarea } from "../../ui/textarea";
+import { ExtendedNodeProps } from "../types";
+import FilePicker from "../../ui/filePicker";
 
 const ImageOutputNode = (props: ExtendedNodeProps) => {
     const { id, data, updateSelf } = props;
 
     const handleInputTextChange = (e: any) => {
-        updateSelf(id, {
+        updateSelf?.(id, {
             data: {
                 config: {
                     text: e.target.value
@@ -21,7 +21,7 @@ const ImageOutputNode = (props: ExtendedNodeProps) => {
 
     return (
         <NodeComponent
-            updateData={(data: Record<string, any>) => props?.updateSelf(props.id, {
+            updateData={(data: Record<string, any>) => props?.updateSelf?.(props.id, {
                 data: data
             })}
             onClick={

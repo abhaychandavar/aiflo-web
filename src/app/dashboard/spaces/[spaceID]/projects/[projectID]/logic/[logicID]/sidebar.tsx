@@ -18,6 +18,7 @@ import { getIcon } from "@/lib/getIcon";
 import { GripVertical, ChevronDown, ChevronRight, ChevronLeft, Share2, Network } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
+import { SearchBar } from "@/components/ui/search-bar";
 
 type GroupedResponse = Record<
   string,
@@ -177,13 +178,14 @@ export const Sidebar = ({
   return (
     <aside className="w-64 bg-background p-4 border-r h-full flex flex-col">
       <div className="flex gap-2">
-      <Button variant={'outline'} size={'icon'} onClick={() => router.back()}><ChevronLeft size={14}/></Button>
-      <Input
-        placeholder="Search nodes..."
-        className="mb-4"
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-      />
+        <Button variant={'outline'} size={'icon'} onClick={() => router.back()}>
+          <ChevronLeft size={14}/>
+        </Button>
+        <SearchBar
+          placeholder="Search nodes..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
       </div>
       <ScrollArea className="flex-1 pr-2" onScroll={handleScroll}>
         <Accordion type="multiple" className="w-full gap-2">

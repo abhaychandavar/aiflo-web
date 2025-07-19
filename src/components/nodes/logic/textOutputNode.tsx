@@ -1,8 +1,8 @@
 import { Position } from "reactflow";
-import NodeComponent from "./node";
-import { ExtendedNodeProps } from "@/types/node";
+import NodeComponent from "../base/node";
+import { ExtendedNodeProps } from "../types";
 import { useEffect, useState, useMemo, useCallback } from "react";
-import { Textarea } from "../ui/textarea";
+import { Textarea } from "../../ui/textarea";
 import { debounce } from 'lodash';
 
 const TextOutputNode = (props: ExtendedNodeProps) => {
@@ -108,7 +108,7 @@ const TextOutputNode = (props: ExtendedNodeProps) => {
 
     return (
         <NodeComponent
-            updateData={(data: Record<string, any>) => props?.updateSelf(props.id, {
+            updateData={(data: Record<string, any>) => props?.updateSelf?.(props.id, {
                 data: data
             })}
             onClick={

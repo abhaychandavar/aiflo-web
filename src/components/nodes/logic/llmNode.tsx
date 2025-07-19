@@ -1,12 +1,12 @@
 import { Position } from "reactflow";
-import NodeComponent from "./node";
-import { SelectContent, SelectGroup, SelectItem, SelectLabel, SelectValue, Select, SelectTrigger } from "../ui/select";
-import { Textarea } from "../ui/textarea";
+import NodeComponent from "../base/node";
+import { SelectContent, SelectGroup, SelectItem, SelectLabel, SelectValue, Select, SelectTrigger } from "../../ui/select";
+import { Textarea } from "../../ui/textarea";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { DropdownMenuItem } from "../ui/dropdown-menu";
+import { DropdownMenuItem } from "../../ui/dropdown-menu";
 import { Settings } from "lucide-react";
-import { ExtendedNodeProps } from "@/types/node";
-import TitleAndSubtitle from "../ui/titleAndSubtitle";
+import { ExtendedNodeProps } from "../types";
+import TitleAndSubtitle from "../../ui/titleAndSubtitle";
 import nodeOptions from "@/config/nodeOptions";
 
 export const accessibleIncomingNodeOptions = [nodeOptions.knowledgeBase, nodeOptions.llm, nodeOptions.start, nodeOptions.textInput];
@@ -37,7 +37,7 @@ const LLMNode = (props: ExtendedNodeProps) => {
     }, []);
 
     const handleInstructionsChange = (event: any) => {
-        props.updateSelf(props.id, {
+        props.updateSelf?.(props.id, {
             data: {
                 config: {
                     instructions: event.target.value
@@ -48,7 +48,7 @@ const LLMNode = (props: ExtendedNodeProps) => {
     }
 
     const handlePromptChange = (event: any) => {
-        props.updateSelf(props.id, {
+        props.updateSelf?.(props.id, {
             data: {
                 config: {
                     prompt: event.target.value
@@ -59,7 +59,7 @@ const LLMNode = (props: ExtendedNodeProps) => {
     }
 
     const handleModelSelect = (value: string) => {
-        props.updateSelf(props.id, {
+        props.updateSelf?.(props.id, {
             data: {
                 config: {
                     model: value
@@ -120,7 +120,7 @@ Example: "Photosynthesis is the process by which green plants convert sunlight i
     </div>
     return (
         <NodeComponent
-            updateData={(data: Record<string, any>) => props?.updateSelf(props.id, {
+            updateData={(data: Record<string, any>) => props?.updateSelf?.(props.id, {
                 data: data
             })}
             onClick={

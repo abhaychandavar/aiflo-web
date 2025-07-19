@@ -17,6 +17,7 @@ import FloCard, { FLOW } from "@/components/flowCard";
 import { useParams } from "next/navigation";
 import flowService from "@/services/flow";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { PageHeader } from "@/components/ui/page-header";
 
 export default function Dashboard() {
   const { projectID } = useParams();
@@ -57,20 +58,21 @@ export default function Dashboard() {
     <div className="flex h-screen">
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Header */}
-        <header className="border-b border-border px-6 py-4 flex items-center justify-between">
-          <h1>My Flows</h1>
-          <div className="flex gap-5 items-center">
-            <ThemeToggle />
-            <AddFlowModal
-              spaceID={spaceID}
-              handleFlowAdded={(data: FLOW) =>
-                setFlows((prev) => [data, ...prev])
-              }
-              projectID={projectID as string}
-            />
-          </div>
-        </header>
+        <PageHeader 
+          title="My Flows"
+          actions={
+            <>
+              <ThemeToggle />
+              <AddFlowModal
+                spaceID={spaceID}
+                handleFlowAdded={(data: FLOW) =>
+                  setFlows((prev) => [data, ...prev])
+                }
+                projectID={projectID as string}
+              />
+            </>
+          }
+        />
 
         {/* Search and Options */}
         <div className="p-6 border-b border-border flex items-center justify-between">

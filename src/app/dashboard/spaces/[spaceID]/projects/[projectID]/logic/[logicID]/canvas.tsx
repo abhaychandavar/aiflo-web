@@ -20,9 +20,9 @@ import ReactFlow, {
   EdgeProps,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
-import InputNode from '@/components/nodes/inputNode';
-import LLMNode from '@/components/nodes/llmNode';
-import OutputNode from '@/components/nodes/outputNode';
+import InputNode from '@/components/nodes/logic/inputNode';
+import LLMNode from '@/components/nodes/logic/llmNode';
+import OutputNode from '@/components/nodes/logic/outputNode';
 import flowService from '@/services/flow';
 import nodeService from '@/services/node';
 import { Button } from '@/components/ui/button';
@@ -40,15 +40,16 @@ import ButtonEdge from '@/components/buttonEdge';
 import { PDFDocument } from 'pdf-lib';
 import docService from '@/services/docService';
 import storage from '@/services/storage';
-import TextNode from '@/components/nodes/textNode';
-import ImageNode from '@/components/nodes/imageNode';
+import TextNode from '@/components/nodes/logic/textNode';
+import ImageNode from '@/components/nodes/logic/imageNode';
 import ImageSidePanelBody from './sidePanels/imageSidePanel';
 import TextSidePanelBody from './sidePanels/textSidePanel';
-import TextOutputNode from '@/components/nodes/textOutputNode';
-import ImageOutputNode from '@/components/nodes/imageOutputNode';
+import TextOutputNode from '@/components/nodes/logic/textOutputNode';
+import ImageOutputNode from '@/components/nodes/logic/imageOutputNode';
 import { ThemeToggle } from '@/components/theme-toggle';
 import FlowNode from '@/components/nodes/flowNode';
 import { SaveIndicator } from '@/components/ui/save-indicator';
+import { TopBar } from '@/components/ui/top-bar';
 
 const initialNodes: Node[] = []
 const initialEdges: Edge[] = []
@@ -480,6 +481,10 @@ export const Canvas = ({ projectID, flowID, spaceID }: { projectID: string, flow
 
   const onNodesDelete = useCallback(
     (deleted: Node[]) => {
+      setSidePanel({
+        isOpen: false,
+        id: ''
+      })
       setEdges(
         deleted.reduce((acc, node) => {
           const incomers = getIncomers(node, nodes, edges)
@@ -693,6 +698,11 @@ export const Canvas = ({ projectID, flowID, spaceID }: { projectID: string, flow
 
   useEffect(() => {
     const sidePanelData = getSidePanelData(sidePanel?.id || '');
+    if (!sidePanelData) {
+      setSidePanelComponent(<></>);
+      return;
+    }
+
     const currSidePanelComponent = <SidePanel
       key={String(sidePanel?.id || new Date())}
       open={sidePanel?.isOpen}
@@ -702,9 +712,7 @@ export const Canvas = ({ projectID, flowID, spaceID }: { projectID: string, flow
       })}
     >
       <SidePanelBody>
-        {
-          sidePanelData.body
-        }
+        {sidePanelData.body}
       </SidePanelBody>
       <SidePanelTitle>
         {
@@ -715,9 +723,7 @@ export const Canvas = ({ projectID, flowID, spaceID }: { projectID: string, flow
         }
       </SidePanelTitle>
       {sidePanelData.node?.data?.description ? <SidePanelDescription>
-        {
-          sidePanelData.node?.data?.description
-        }
+        {sidePanelData.node?.data?.description}
       </SidePanelDescription> : <></>}
     </SidePanel>
     setSidePanelComponent(currSidePanelComponent);
@@ -757,24 +763,27 @@ export const Canvas = ({ projectID, flowID, spaceID }: { projectID: string, flow
 
   return (
     <div className='flex flex-col w-full h-full'>
-      <div className="flex w-full items-center justify-between p-2 gap-2 border-b-1">
-        <h1>{flow?.name || ''}</h1>
-        <div className='flex items-center gap-5'>
-          <SaveIndicator 
-            status={isSaving ? 'saving' : hasChanges ? 'unsaved' : 'saved'} 
-            onSave={saveFlow}
-          />
-          <ThemeToggle />
-          <Button onClick={handleFlowRun} variant={'secondary'}>
-            Download
-            <Download />
-          </Button>
-          <Button onClick={handleFlowRun} disabled={isFlowRunning}>
-            {isFlowRunning ? "Running" : "Run"}
-            {isFlowRunning ? <Clock /> : <PlayIcon />}
-          </Button>
-        </div>
-      </div>
+      <TopBar
+        variant="canvas"
+        left={<h1>{flow?.name || ''}</h1>}
+        right={
+          <>
+            <SaveIndicator 
+              status={isSaving ? 'saving' : hasChanges ? 'unsaved' : 'saved'} 
+              onSave={saveFlow}
+            />
+            <ThemeToggle />
+            <Button onClick={handleFlowRun} variant={'secondary'}>
+              Download
+              <Download />
+            </Button>
+            <Button onClick={handleFlowRun} disabled={isFlowRunning}>
+              {isFlowRunning ? "Running" : "Run"}
+              {isFlowRunning ? <Clock /> : <PlayIcon />}
+            </Button>
+          </>
+        }
+      />
       <div className='w-full h-full relative overflow-hidden'>
         {sidePanelComponent}
 

@@ -1,4 +1,4 @@
-import { accessibleIncomingNodeOptions } from "@/components/nodes/llmNode";
+import { accessibleIncomingNodeOptions } from "@/components/nodes/logic/llmNode";
 import SmartTextArea from "@/components/smartTextArea";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea";

@@ -11,6 +11,8 @@ import { Input } from "@/components/ui/input";
 import { ArrowLeft, CheckCircle2, FileText, Loader2, Plus, Search, Upload, XCircle } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { TopBar } from '@/components/ui/top-bar';
+import { SearchBar } from "@/components/ui/search-bar";
 
 export default function KnowledgeBase() {
     const [documents, setDocuments] = useState<FileUploadedType[]>([]);
@@ -82,51 +84,51 @@ export default function KnowledgeBase() {
 
     return (
         <div className="flex flex-col h-screen w-full p-6 space-y-6">
-            {/* Header */}
-            <div className="flex justify-between items-center">
-                <div className="flex items-center space-x-4">
-                    <Button 
-                        variant="outline" 
-                        size="icon"
-                        onClick={() => router.back()}
-                        className="hover:bg-muted"
-                    >
-                        <ArrowLeft className="h-5 w-5" />
-                    </Button>
-                    <div>
-                        <h1 className="text-2xl font-bold">Knowledge Base</h1>
-                        <p className="text-muted-foreground">Manage and search through your documents</p>
-                    </div>
-                </div>
-                <Dialog>
-                    <DialogTrigger asChild>
-                        <Button>
-                            <Plus className="mr-2 h-4 w-4" />
-                            Add Document
+            <TopBar
+                className="-mx-6 -mt-6 px-6 py-4"
+                left={
+                    <div className="flex items-center space-x-4">
+                        <Button 
+                            variant="outline" 
+                            size="icon"
+                            onClick={() => router.back()}
+                            className="hover:bg-muted"
+                        >
+                            <ArrowLeft className="h-5 w-5" />
                         </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                        <DialogHeader>
-                            <DialogTitle>Add New Document</DialogTitle>
-                            <DialogDescription>
-                                Upload a document to your knowledge base
-                            </DialogDescription>
-                        </DialogHeader>
-                        {/* Add upload form here */}
-                    </DialogContent>
-                </Dialog>
-            </div>
+                        <div>
+                            <h1 className="text-2xl font-bold">Knowledge Base</h1>
+                            <p className="text-muted-foreground">Manage and search through your documents</p>
+                        </div>
+                    </div>
+                }
+                right={
+                    <Dialog>
+                        <DialogTrigger asChild>
+                            <Button>
+                                <Plus className="mr-2 h-4 w-4" />
+                                Add Document
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>Add New Document</DialogTitle>
+                                <DialogDescription>
+                                    Upload a document to your knowledge base
+                                </DialogDescription>
+                            </DialogHeader>
+                            {/* Add upload form here */}
+                        </DialogContent>
+                    </Dialog>
+                }
+            />
 
             {/* Search Bar */}
-            <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                    placeholder="Search documents..."
-                    className="pl-10"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                />
-            </div>
+            <SearchBar
+                placeholder="Search documents..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+            />
 
             {/* Documents Grid */}
             {isLoading ? (

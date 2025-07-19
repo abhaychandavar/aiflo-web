@@ -1,6 +1,6 @@
 import { Position } from "reactflow";
-import NodeComponent from "./base/node";
-import { ExtendedNodeProps } from "@/types/node";
+import NodeComponent from "../base/node";
+import { ExtendedNodeProps } from "../types";
 import nodeOptions from "@/config/nodeOptions";
 
 export const accessibleIncomingNodeOptions = [nodeOptions.knowledgeBase, nodeOptions.llm, nodeOptions.start, nodeOptions.textInput];
@@ -8,7 +8,7 @@ export const accessibleIncomingNodeOptions = [nodeOptions.knowledgeBase, nodeOpt
 const Document = (props: ExtendedNodeProps) => {
     return (
         <NodeComponent
-            updateData={(data: Record<string, any>) => props?.updateSelf(props.id, {
+            updateData={(data: Record<string, any>) => props?.updateSelf?.(props.id, {
                 data: data
             })}
             onClick={

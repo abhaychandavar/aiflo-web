@@ -1,8 +1,8 @@
 import { Position } from "reactflow";
-import NodeComponent from "./base/node";
+import NodeComponent from "../base/node";
 import { Share2 } from 'lucide-react';
-import { ExtendedNodeProps } from "@/types/node";
-import TitleAndSubtitle from "../ui/titleAndSubtitle";
+import { ExtendedNodeProps } from "../types";
+import TitleAndSubtitle from "../../ui/titleAndSubtitle";
 import nodeOptions from "@/config/nodeOptions";
 
 export const accessibleIncomingNodeOptions = [nodeOptions.knowledgeBase, nodeOptions.llm, nodeOptions.start, nodeOptions.textInput];
@@ -29,7 +29,7 @@ const FlowNode = (props: ExtendedNodeProps) => {
 
   return (
     <NodeComponent
-      updateData={(data: Record<string, any>) => props?.updateSelf(props.id, {
+      updateData={(data: Record<string, any>) => props?.updateSelf?.(props.id, {
         data: data
       })}
       onClick={() => {
